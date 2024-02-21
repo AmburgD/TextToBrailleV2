@@ -5,6 +5,7 @@
 #   numpy-stl
 #   pillow
 
+from numpy import char
 import lithophane as LI
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
@@ -238,6 +239,11 @@ def displayChar(character, row, col):
                 lineTwo += character[i][j]
             elif i == 2:
                 lineThree += character[i][j]
+    # Add a space in-between each character if it isnt a space
+    if character != ' ':
+        lineOne += " "
+        lineTwo += " "
+        lineThree += " "
     # return line_one,line_two,line_three
 
 def textConvert(currentLetter, row, col):
@@ -328,13 +334,13 @@ def textToImage(textToConvert: str, outputFileName: str ):
     # create an image (mode, size, color)
     out = Image.new("RGB", size , (255, 255, 255))
 
-    # get a font (Font Choice is important for correct output, must use monospace)
-    fnt = ImageFont.truetype("courier.ttf", 40)
+    # get a font (Font Choice is important for correct output, must use monospace fixed width)
+    fnt = ImageFont.truetype("consolasB.ttf", size = 40)
     # get a drawing context
     d = ImageDraw.Draw(out)
 
     # draw multiline text
-    d.multiline_text((10, 10), textToConvert, font=fnt,spacing = .5, fill=(0, 0, 0))
+    d.multiline_text((10, 10), textToConvert, font=fnt, spacing = .4,  fill=(0, 0, 0))
 
     # save the image
     ImageOps.contain(out, size).save(outputFileName + ".jpg")
@@ -367,7 +373,8 @@ def convert2STL(fileName: str):
     #Generate xyz point cloud
     imagefile = fileName
     width: int = 102 #Width in mm
-    x,y,z = LI.jpg2stl(imagefile, width=width, h = 3, d = 0.5)
+    #Depth controls the height of the dots. Set to .9 for ADA compliance.
+    x,y,z = LI.jpg2stl(imagefile, width=width, depth= .9, offset= 1)
     #Generate stl model from pointcloud and save
     model = LI.makemesh(x,y,z)
     filename=imagefile[:-4] + '_Flat.stl'
@@ -409,30 +416,18 @@ if __name__ == "__main__":
 
             # Add all of the lines to a single string so it can be converted to an image
             toImage = lineOne + "\n" + lineTwo + "\n" + lineThree + "\n"
-            textToImage(toImage, "SingleLine")
-            convert2STL("SingleLine.jpg")
+            textToImage(toImage, toBeConverted + "Translated")
+            convert2STL(toBeConverted + "Translated.jpg")
 
-            createFile = input("Would you like to save? (Yes or No)")
-
-            if 'y' in createFile  or 'Y' in createFile:
-
-                name = input("Name your save file: ")
-
-                with open(name + ".txt", "w") as file:
-                    # Write to file and then clear input
-                    file.write(lineOne + "\n")
-                    file.write(lineTwo + "\n")
-                    file.write(lineThree + "\n")
-                    lineOne = ""
-                    lineTwo = ""
-                    lineThree = ""
-            elif 'n' in createFile or 'N' in createFile:
-                # Clear all of the strings
+            with open(toBeConverted + "Translated.txt", "w") as file:
+                # Write to file and then clear input
+                file.write(lineOne + "\n")
+                file.write(lineTwo + "\n")
+                file.write(lineThree + "\n")
                 lineOne = ""
                 lineTwo = ""
                 lineThree = ""
-            else:
-                print("That was not a choice, save error occured.")
+            
             # Clear strings for next input
             lineOne = ""
             lineTwo = ""
@@ -461,6 +456,8 @@ if __name__ == "__main__":
                         writeableFile.write(lineOne + "\n")
                         writeableFile.write(lineTwo + "\n")
                         writeableFile.write(lineThree + "\n")
+                        # add a blank line inbetween lines of text
+                        writeableFile.write("\n")
                         lineOne = ""
                         lineTwo = ""
                         lineThree = ""

@@ -45,14 +45,14 @@ def scaleim(im, width_mm=40):
     return im
 
 
-def jpg2stl(im='', width=0, h=3.0, d=0.5, show=True):
+def jpg2stl(im='', width=0, depth=3.0, offset=0.5, show=True):
     """Function to convert filename to stl with width = width
 
-    :width: - Required parameter.  Width
+    :width: - Required parameter.
+    :depth: - The height of the raised dark portion of the image in MM
+    :Offset: - the base to be printed on in MM
 
     """
-    depth = h
-    offset = d
 
     if type(im) == str:
         filename = im
