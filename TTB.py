@@ -4,10 +4,15 @@
 # pip install
 #   numpy-stl
 #   pillow
+#   PyQt5
 
+from math import ceil
 from numpy import char
 import lithophane as LI
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PyQt5.QtWidgets import QApplication
+import sys
+import os
 
 #all of our characters
 
@@ -229,6 +234,12 @@ def displayChar(character, row, col):
     global lineOne
     global lineTwo
     global lineThree
+
+    # Using / or \ in the algorithm causes a filepath reveal. For security,
+    # adding a case to abort program if the slash is discovered 
+    if char == "/" or char == "\\":
+        sys.exit
+
     # Run through each row of the array
     for i in range(row):
         # For each row, concatenate the characters into the respective lines
@@ -298,6 +309,26 @@ def textConvert(currentLetter, row, col):
         case '8':[displayChar(number_sign, row, col), displayChar(h, row, col)],
         case '9':[displayChar(number_sign, row, col), displayChar(i, row, col)]
 
+def pt_to_px(pt: int = 11):
+    """A function to covert font in Points to Pixels
+    This is so that the sizing of the font can be more consistent to the 
+    screen dimensions. It uses the PyQt5 library to detect screen DPI.
+    (Default is 11Pt font)
+    Args:
+        pt (int): The Font size in Points
+
+    Returns:
+        Pixels [Int]: The font size in Pixels
+    """
+    app = QApplication(sys.argv)
+    screen = app.screens()[0]
+    dpi = screen.physicalDotsPerInch()
+    app.quit()
+    return int((pt / 72) * dpi)
+
+# Globally determine the font size to prevent the GUI error
+fontSize = pt_to_px(15)
+
 def textToImage(textToConvert: str, outputFileName: str ):
     """A function to convert a text strng to an image file.
 
@@ -325,22 +356,34 @@ def textToImage(textToConvert: str, outputFileName: str ):
             
     #print("Number of chars: " + str(numChars))#?DEBUG
 
+    # get a font (Font Choice is important for correct output, must use monospace fixed width)
+    # size is the size in pixels, use the pt_to_px function to get the correct size
+    fnt = ImageFont.truetype("consolasB.ttf", size = fontSize)
+    
+    # Get the dimension coordinates of a single character in the specified font size
+    width, height, width2, height2 = fnt.getbbox(text = '•')
+    # print("Width (x) of char: " + str(width) +", " + str(width2),"height (y) of char: " + str(height)+", " + str(height2))#?DEBUG
+    
+    # Calculate the width and the height based on the coordinates
+    charWidth = width2-width
+    charHeight = height2 - height
+
+    #! OLD METHOD
     # (60,105) = size of 1 char, test using char q to get full size
     # multiply X by the number of character then subtract away (number of hangover bits * # of chars)
     # multiply y by the number of lines then subtract (that value / 3 because it treats each character as 3 rows)*2 for 2/3
 
+
     # Pixel dimentions of the resulting image (x, y) 
-    size = ((60 * numChars) - (8 * numChars), (105 * numLines) - (int((105 * numLines)/3)*2))
+    size = ((charWidth*3) * numChars) , ceil(((charHeight*3) * numLines)/2)
     # create an image (mode, size, color)
     out = Image.new("RGB", size , (255, 255, 255))
 
-    # get a font (Font Choice is important for correct output, must use monospace fixed width)
-    fnt = ImageFont.truetype("consolasB.ttf", size = 40)
     # get a drawing context
     d = ImageDraw.Draw(out)
 
     # draw multiline text
-    d.multiline_text((10, 10), textToConvert, font=fnt, spacing = .4,  fill=(0, 0, 0))
+    d.multiline_text((0, 0), textToConvert, font=fnt, spacing = .4,  fill=(0, 0, 0))
 
     # save the image
     ImageOps.contain(out, size).save(outputFileName + ".jpg")
@@ -348,6 +391,7 @@ def textToImage(textToConvert: str, outputFileName: str ):
     out.show()
 
 def getBFContent(brailleFileName: str):
+
     """ Get Braille File Content: \n
     A method of getting the braille text out of the file to be converted to an image
     Do not worry about adding the .TXT to the content of the input, it will automagically do it
@@ -387,84 +431,86 @@ lineThree = ""
 
 
 #MAIN
-if __name__ == "__main__":
-    import sys
 
-    #to initialize the loop 
-    running = True
+#to initialize the loop 
+running = True
 
-    while running:
-        choice = input("Translate From input(1), Translate from file(2), help(3)  or end(4)")
-        # print(choice)#?DEBUG
-        toBeConverted: str = " "
-
-        if choice == "1":
-            toBeConverted = input("What would you like to translate? ")
-            for character in toBeConverted:
+while running:
+    choice = input("Translate From input(1), Translate from file(2), help(3)  or end(4): ")
+    # print(choice)#?DEBUG
+    toBeConverted: str = " "
+    if choice == "1":
+        toBeConverted = input("What would you like to translate? ")
+        for character in toBeConverted:
+            # print(character)#?DEBUG
+            # print(toBeConverted)#?DEBUG
+            if character.isupper():
+                character = character.lower()
                 # print(character)#?DEBUG
-                # print(toBeConverted)#?DEBUG
-                if character.isupper():
-                    character = character.lower()
-                    # print(character)#?DEBUG
-                    displayChar(capital_letter, 3, 2)
-                    textConvert(character, 3, 2)
-                else:
-                    textConvert(character, 3,2)
-            print(lineOne)
-            print(lineTwo)
-            print(lineThree)
-
-            # Add all of the lines to a single string so it can be converted to an image
-            toImage = lineOne + "\n" + lineTwo + "\n" + lineThree + "\n"
-            textToImage(toImage, toBeConverted + "Translated")
-            convert2STL(toBeConverted + "Translated.jpg")
-
-            with open(toBeConverted + "Translated.txt", "w") as file:
-                # Write to file and then clear input
-                file.write(lineOne + "\n")
-                file.write(lineTwo + "\n")
-                file.write(lineThree + "\n")
-                lineOne = ""
-                lineTwo = ""
-                lineThree = ""
-            
-            # Clear strings for next input
+                displayChar(capital_letter, 3, 2)
+                textConvert(character, 3, 2)
+            else:
+                textConvert(character, 3,2)
+        print(lineOne)
+        print(lineTwo)
+        print(lineThree)
+        # Add all of the lines to a single string so it can be converted to an image
+        toImage = lineOne + "\n" + lineTwo + "\n" + lineThree + "\n"
+        textToImage(toImage, toBeConverted + "Translated")
+        convert2STL(toBeConverted + "Translated.jpg")
+        with open(toBeConverted + "Translated.txt", "w") as file:
+            # Write to file and then clear input
+            file.write(lineOne + "\n")
+            file.write(lineTwo + "\n")
+            file.write(lineThree + "\n")
             lineOne = ""
             lineTwo = ""
             lineThree = ""
-
-        elif choice == "2":
+        
+        # Clear strings for next input
+        lineOne = ""
+        lineTwo = ""
+        lineThree = ""
+    elif choice == "2":
+        # writeFileName = input("What would you like to name the output file: ")# User no longer gets a choice 1/2/24
+        fileInputLoop = True
+        while fileInputLoop == True:
             fileName = input("What is the name of the file you would like to translate. Be sure to enter it EXACTLY as it is found without the .txt: ")
-            # writeFileName = input("What would you like to name the output file: ")# User no longer gets a choice 1/2/24
-            with open(fileName+"Translated.txt","w") as writeableFile:
-                with open(fileName + ".txt", "r") as file:
-                    for line in file:
-                        print(line)
-                        for character in line:
-                             # print(character)#?DEBUG
-                             # print(toBeConverted)#?DEBUG
-                            if character.isupper():
-                                character = character.lower()
-                                # print(character)#?DEBUG
-                                displayChar(capital_letter, 3, 2)
-                                textConvert(character, 3, 2)
-                            else:
-                                textConvert(character, 3,2)
-                        print(lineOne)
-                        print(lineTwo)
-                        print(lineThree)
-                        writeableFile.write(lineOne + "\n")
-                        writeableFile.write(lineTwo + "\n")
-                        writeableFile.write(lineThree + "\n")
-                        # add a blank line inbetween lines of text
-                        writeableFile.write("\n")
-                        lineOne = ""
-                        lineTwo = ""
-                        lineThree = ""
-            contentString:str = getBFContent(fileName+"Translated")
-            textToImage(contentString, fileName + "Translated")
-            convert2STL(fileName + "Translated.jpg")
-        elif choice == "3":
-            print("Translate from input allows the user to translate a string they type. \nTranslate from file allows the user to select a file that they want to translate.")
-        elif choice == "4":
-            break
+            if os.path.exists(fileName+"Translated.txt"):
+                fileInputLoop = False
+            else:
+             print("File not found. Please enter a valid file name.")
+       
+       
+        with open(fileName+"Translated.txt","w") as writeableFile:
+            with open(fileName + ".txt", "r") as file:
+                for line in file:
+                    print(line)
+                    for character in line:
+                         # print(character)#?DEBUG
+                         # print(toBeConverted)#?DEBUG
+                        if character.isupper():
+                            character = character.lower()
+                            # print(character)#?DEBUG
+                            displayChar(capital_letter, 3, 2)
+                            textConvert(character, 3, 2)
+                        else:
+                            textConvert(character, 3,2)
+                    print(lineOne)
+                    print(lineTwo)
+                    print(lineThree)
+                    writeableFile.write(lineOne + "\n")
+                    writeableFile.write(lineTwo + "\n")
+                    writeableFile.write(lineThree + "\n")
+                    # add a blank line inbetween lines of text
+                    writeableFile.write("\n")
+                    lineOne = ""
+                    lineTwo = ""
+                    lineThree = ""
+        contentString:str = getBFContent(fileName+"Translated")
+        textToImage(contentString, fileName + "Translated")
+        convert2STL(fileName + "Translated.jpg")
+    elif choice == "3":
+        print("Translate from input allows the user to translate a string they type. \nTranslate from file allows the user to select a file that they want to translate.")
+    elif choice == "4":
+        break

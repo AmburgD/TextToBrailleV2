@@ -1,1 +1,2 @@
 This is some dummy text
+It has two lines

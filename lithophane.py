@@ -65,7 +65,8 @@ def jpg2stl(im='', width=0, depth=3.0, offset=0.5, show=True):
         width = im.shape[1]
 
     # TODO: Width is actually height
-    im = scaleim(im, width_mm=width)
+    # This line needed to be removed from the library to make the jpg to stl conversion consistent with text.
+    # im = scaleim(im, width_mm=width) 
 
     im = im/np.max(im)
 
