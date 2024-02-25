@@ -1,2 +1,2 @@
-This is some dummy text
-It has two lines
+This is a test
+two lines

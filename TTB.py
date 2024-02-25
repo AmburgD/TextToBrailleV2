@@ -327,7 +327,7 @@ def pt_to_px(pt: int = 11):
     return int((pt / 72) * dpi)
 
 # Globally determine the font size to prevent the GUI error
-fontSize = pt_to_px(15)
+fontSize = pt_to_px(20)
 
 def textToImage(textToConvert: str, outputFileName: str ):
     """A function to convert a text strng to an image file.
@@ -383,7 +383,7 @@ def textToImage(textToConvert: str, outputFileName: str ):
     d = ImageDraw.Draw(out)
 
     # draw multiline text
-    d.multiline_text((0, 0), textToConvert, font=fnt, spacing = .4,  fill=(0, 0, 0))
+    d.multiline_text((0, 0), textToConvert, font=fnt, spacing = .2,  fill=(0, 0, 0))
 
     # save the image
     ImageOps.contain(out, size).save(outputFileName + ".jpg")
@@ -476,7 +476,7 @@ while running:
         fileInputLoop = True
         while fileInputLoop == True:
             fileName = input("What is the name of the file you would like to translate. Be sure to enter it EXACTLY as it is found without the .txt: ")
-            if os.path.exists(fileName+"Translated.txt"):
+            if os.path.exists(fileName+".txt"):
                 fileInputLoop = False
             else:
              print("File not found. Please enter a valid file name.")
