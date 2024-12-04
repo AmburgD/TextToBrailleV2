@@ -375,7 +375,7 @@ def textToImage(textToConvert: str, outputFileName: str ):
 
 
     # Pixel dimentions of the resulting image (x, y) 
-    size = ((charWidth*3) * numChars) , ceil(((charHeight*3) * numLines)/2)
+    size = ((charWidth*3) * numChars)-(charWidth*numChars) , ceil(((charHeight*3) * numLines)/2)
     # create an image (mode, size, color)
     out = Image.new("RGB", size , (255, 255, 255))
 
